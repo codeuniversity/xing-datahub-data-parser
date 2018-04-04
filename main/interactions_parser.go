@@ -2,18 +2,16 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
-	"sort"
 	"strconv"
 
 	"github.com/codeuniversity/xing-datahub-protocol"
 )
 
 type interaction protocol.RawInteraction
-type interactionCollection []*interaction
 type interactionMap map[string]*interaction
 
-var interactions interactionCollection
 var outputInteractions = interactionMap{}
 
 func main() {
@@ -35,44 +33,53 @@ func main() {
 	csvReader.LazyQuotes = false
 	csvReader.ReuseRecord = true
 
+	counter := 0
+	fmt.Println("reading csv:...")
 	for {
+		counter++
+		if counter%10000 == 0 {
+			fmt.Print("line ", counter, "\r")
+		}
 		data, err := csvReader.Read()
 		if data == nil {
 			break
 		} else {
 			if err == nil {
-				addInteraction(data)
+				addToMap(parseArrayToInteraction(data))
 			}
 		}
 	}
-
-	sort.Sort(interactions)
-	addToMap(interactions)
 
 	outputFile, err := os.Create(outputFilePath)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Writing:...")
+	counter = 0
 	csvWriter := csv.NewWriter(outputFile)
 	csvWriter.Comma = '\t'
+	csvWriter.Write([]string{"user_id", "item_id", "interaction_type", "created_at"})
 	for _, i := range outputInteractions {
+		counter++
+		if counter%10000 == 0 {
+			fmt.Print("line ", counter, "\r")
+		}
 		csvWriter.Write(i.toArray())
 	}
 
 }
 
-func addToMap(c interactionCollection) {
-	for _, i := range c {
-		previousInteraction := outputInteractions[i.hashKey()]
-		if previousInteraction == nil || previousInteraction.InteractionType != "4" {
+func addToMap(i *interaction) {
+	previousInteraction := outputInteractions[i.hashKey()]
+	if previousInteraction == nil {
+		outputInteractions[i.hashKey()] = i
+	} else if previousInteraction.InteractionType != "4" {
+		prev, _ := strconv.ParseInt(previousInteraction.InteractionType, 10, 64)
+		current, _ := strconv.ParseInt(i.InteractionType, 10, 64)
+		if prev < current {
 			outputInteractions[i.hashKey()] = i
 		}
 	}
-}
-
-func addInteraction(arr []string) {
-	interaction := parseArrayToInteraction(arr)
-	interactions = append(interactions, interaction)
 }
 
 func parseArrayToInteraction(arr []string) *interaction {
@@ -82,27 +89,6 @@ func parseArrayToInteraction(arr []string) *interaction {
 		InteractionType: arr[2],
 		CreatedAt:       arr[3],
 	}
-}
-
-func (c interactionCollection) Len() int {
-	return len(c)
-}
-
-func (c interactionCollection) Less(i, j int) bool {
-	createdAt1, err := strconv.ParseInt(c[i].CreatedAt, 10, 64)
-	createdAt2, err := strconv.ParseInt(c[j].CreatedAt, 10, 64)
-
-	if err != nil {
-		return false
-	}
-	return createdAt1 < createdAt2
-}
-
-func (c interactionCollection) Swap(i, j int) {
-	var tmpPointer *interaction
-	tmpPointer = c[i]
-	c[i] = c[j]
-	c[j] = tmpPointer
 }
 
 func (i *interaction) toArray() []string {
