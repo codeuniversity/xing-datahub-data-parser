@@ -1,0 +1,14 @@
+hash: dc23c3fb35425d73fb70e174bfaf4a885599dcfec141673d64b3038576a47283
+updated: 2018-04-04T10:54:38.997773+02:00
+imports:
+- name: github.com/codeuniversity/xing-datahub-protocol
+  version: e7f83734e28e148dd0095449247fcc069ad09b89
+- name: github.com/gogo/protobuf
+  version: 1adfc126b41513cc696b209667c8656ea7aac67c
+  subpackages:
+  - proto
+- name: github.com/golang/protobuf
+  version: 925541529c1fa6821df4e44ce2723319eb2be768
+  subpackages:
+  - proto
+testImports: []

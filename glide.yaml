@@ -1,0 +1,3 @@
+package: github.com/codeuniversity/xing-datahub-data-parser
+import:
+- package: github.com/codeuniversity/xing-datahub-protocol
